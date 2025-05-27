@@ -1,32 +1,17 @@
-from Lexer import TokenType
-
-class Parser:
-    def __init__(self, lexer):
-        self.lexer = lexer
-        self.current_token = self.lexer.get_next_token()
-        self.text = lexer.input_text
-        self.pos = lexer.pos
-
-    def consume(self, expected_token_type):
-        if self.current_token.type == expected_token_type:
-            self.current_token = self.lexer.get_next_token()
-        else:
-            raise SyntaxError(f"Expected {expected_token_type}, got {self.current_token.type}")
-    
-    def parse(self):
+def parse(self):
         result = self.expr()
         if self.current_token.type != TokenType.EOF:
-            raise SyntaxError("Unexpected input after end of expression")
+            raise SyntaxError("Unexpected input after complete expression")
         return result
 
-    
+
     def expr(self):
         result = self.power()
-        while self.current_token.type == TokenType.LESS:  
-            self.consume(TokenType.LESS)
+        while self.current_token.type == TokenType.POWER:
+            self.consume(TokenType.POWER)
             exponent = self.power()
             if not exponent.isdigit():
-                raise ValueError("Exponent must be a number")
+                raise ValueError("Right-hand side of '^' must be a number")
             result = result * int(exponent)
         return result
 
@@ -36,8 +21,8 @@ class Parser:
 
     
     def reverse(self):
-        if self.current_token.type == TokenType.MINUS:  
-            self.consume(TokenType.MINUS)
+        if self.current_token.type == TokenType.REVERSE:
+            self.consume(TokenType.REVERSE)
             value = self.reverse()
             return value[::-1]
         else:
@@ -46,38 +31,25 @@ class Parser:
     
     def concat(self):
         result = self.factor()
-        while self.current_token.type == TokenType.TIMES:  
-            self.consume(TokenType.TIMES)
+        while self.current_token.type == TokenType.CONCAT:
+            self.consume(TokenType.CONCAT)
             result += self.factor()
         return result
 
-   
+    
     def factor(self):
-       
-        if self.lexer.current_char == '"':
-            return self.parse_string()
-
+        if self.current_token.type == TokenType.STRING:
+            value = self.current_token.attribute
+            self.consume(TokenType.STRING)
+            return value
         elif self.current_token.type == TokenType.NUMBER:
-            val = str(self.current_token.attribute)
+            value = str(self.current_token.attribute)
             self.consume(TokenType.NUMBER)
-            return val
-
+            return value
         elif self.current_token.type == TokenType.LPAREN:
             self.consume(TokenType.LPAREN)
-            result = self.expr()
+            value = self.expr()
             self.consume(TokenType.RPAREN)
-            return result
-
-        raise SyntaxError("Unexpected token in factor")
-
-    def parse_string(self):
-        result = ''
-        self.lexer.advance()  
-        while self.lexer.current_char != '"' and self.lexer.current_char is not None:
-            result += self.lexer.current_char
-            self.lexer.advance()
-        if self.lexer.current_char != '"':
-            raise SyntaxError("Unterminated string literal")
-        self.lexer.advance()  
-        self.current_token = self.lexer.get_next_token()  
-        return result
+            return value
+        else:
+            raise SyntaxError(f"Syntax error: expected STRING, NUMBER or '(', but found {self.current_token.type}")
