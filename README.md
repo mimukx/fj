@@ -1,4 +1,4 @@
-Parser_1: 
+Parser_2: 
 
 " ^ " s najnižšou prioritou 
 
@@ -8,7 +8,7 @@ Parser_1:
 
 "("a")"
 
-Parser_2:
+Parser_1:
 
 "*" s najnižšou prioritou
 
