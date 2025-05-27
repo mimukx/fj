@@ -15,3 +15,5 @@ Parser_2:
 "+" a odčítania "-" s prioritou vyššou ako násobenie a pravou asociativitou
 
 "<" s najvyššou priotitou a ľavou asociativitou
+
+"("a")"
