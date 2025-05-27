@@ -4,54 +4,66 @@ class Parser:
     def __init__(self, lexer):
         self.lexer = lexer
         self.current_token = self.lexer.get_next_token()
-    
+
     def consume(self, expected_token_type):
         if self.current_token.type == expected_token_type:
             self.current_token = self.lexer.get_next_token()
         else:
             raise SyntaxError(f"Syntax error: expected token type {expected_token_type}, but found token type {self.current_token.type}")
-    
+
     def parse(self):
-        result = self.less()
+        result = self.expr()
         if self.current_token.type != TokenType.EOF:
-            raise SyntaxError(f"Unexpected token: {self.current_token}")
+            raise SyntaxError("Unexpected input after complete expression")
         return result
 
-    def less(self):
-        result = self.plus_minus()
-        while self.current_token.type == TokenType.LESS:
-            self.consume(TokenType.LESS)
-            result = 1 if result < self.plus_minus() else 0
+    
+    def expr(self):
+        result = self.power()
+        while self.current_token.type == TokenType.POWER:
+            self.consume(TokenType.POWER)
+            exponent = self.power()
+            if not exponent.isdigit():
+                raise ValueError("Right-hand side of '^' must be a number")
+            result = result * int(exponent)
         return result
 
-    def plus_minus(self):
-        result = self.nasobenie()
-        while self.current_token.type in (TokenType.PLUS, TokenType.MINUS):
-            if self.current_token.type == TokenType.PLUS:
-                self.consume(TokenType.PLUS)
-                result += self.nasobenie()
-            else:
-                self.consume(TokenType.MINUS)
-                result -= self.nasobenie()
-        return result
+    
+    def power(self):
+        return self.reverse()
 
-    def nasobenie(self):
+    
+    def reverse(self):
+        if self.current_token.type == TokenType.REVERSE:
+            self.consume(TokenType.REVERSE)
+            value = self.reverse()
+            return value[::-1]
+        else:
+            return self.concat()
+
+   
+    def concat(self):
         result = self.factor()
-        while self.current_token.type == TokenType.TIMES:
-            self.consume(TokenType.TIMES)
-            result *= self.factor()
+        while self.current_token.type == TokenType.CONCAT:
+            self.consume(TokenType.CONCAT)
+            result += self.factor()
         return result
 
-
+    
     def factor(self):
-        if self.current_token.type == TokenType.NUMBER:
+        if self.current_token.type == TokenType.STRING:
             value = self.current_token.attribute
+            self.consume(TokenType.STRING)
+            return value
+        elif self.current_token.type == TokenType.NUMBER:
+            value = str(self.current_token.attribute)
             self.consume(TokenType.NUMBER)
             return value
         elif self.current_token.type == TokenType.LPAREN:
             self.consume(TokenType.LPAREN)
-            result = self.less()
+            value = self.expr()
             self.consume(TokenType.RPAREN)
-            return result
+            return value
         else:
-            raise SyntaxError(f"Unexpected token{self.current_token}")
+            raise SyntaxError(f"Syntax error: expected STRING, NUMBER or '(', but found {self.current_token.type}")
+
