@@ -1,0 +1,66 @@
+from Lexer import TokenType
+
+class Parser:
+    def __init__(self, lexer):
+        self.lexer = lexer
+        self.current_token = self.lexer.get_next_token()
+    
+    def consume(self, expected_token_type):
+        if self.current_token.type == expected_token_type:
+            self.current_token = self.lexer.get_next_token()
+        else:
+            raise SyntaxError(f"Syntax error: expected token type {expected_token_type}, but found token type {self.current_token.type}")
+    
+    def parse(self):
+        result = self.E()
+        if self.current_token.type != TokenType.EOF:
+            raise SyntaxError("Unexpected token after end of expression")
+        return result
+
+    # E → A ('<' A)* (left-associative)
+    def E(self):
+        result = self.A()
+        while self.current_token.type == TokenType.LESS:
+            self.consume(TokenType.LESS)
+            right = self.A()
+            result = 1 if result < right else 0
+        return result
+
+    # A → S ('+' S | '-' S)* (right-associative)
+    def A(self):
+        terms = [self.S()]
+        ops = []
+        while self.current_token.type in (TokenType.PLUS, TokenType.MINUS):
+            ops.append(self.current_token.type)
+            self.consume(self.current_token.type)
+            terms.append(self.S())
+        # Apply right-associative logic
+        while ops:
+            op = ops.pop()
+            right = terms.pop()
+            left = terms.pop()
+            result = left + right if op == TokenType.PLUS else left - right
+            terms.append(result)
+        return terms[0]
+
+    # S → F ('*' F)* (left-associative)
+    def S(self):
+        result = self.F()
+        while self.current_token.type == TokenType.TIMES:
+            self.consume(TokenType.TIMES)
+            result *= self.F()
+        return result
+
+    # F → NUMBER | '(' E ')'
+    def F(self):
+        if self.current_token.type == TokenType.NUMBER:
+            value = self.current_token.attribute
+            self.consume(TokenType.NUMBER)
+            return value
+        elif self.current_token.type == TokenType.LPAREN:
+            self.consume(TokenType.LPAREN)
+            result = self.E()
+            self.consume(TokenType.RPAREN)
+            return result
+        else:
+            raise SyntaxError(f"Syntax error: expected token type TokenType.NUMBER, but found token type {self.current_token.type}")
