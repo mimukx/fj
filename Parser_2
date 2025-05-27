@@ -12,55 +12,46 @@ class Parser:
             raise SyntaxError(f"Syntax error: expected token type {expected_token_type}, but found token type {self.current_token.type}")
     
     def parse(self):
-        result = self.E()
+        result = self.less()
         if self.current_token.type != TokenType.EOF:
-            raise SyntaxError("Unexpected token after end of expression")
+            raise SyntaxError(f"Unexpected token: {self.current_token}")
         return result
 
-    # E → A ('<' A)* (left-associative)
-    def E(self):
-        result = self.A()
+    def less(self):
+        result = self.plus_minus()
         while self.current_token.type == TokenType.LESS:
             self.consume(TokenType.LESS)
-            right = self.A()
-            result = 1 if result < right else 0
+            result = 1 if result < self.plus_minus() else 0
         return result
 
-    # A → S ('+' S | '-' S)* (right-associative)
-    def A(self):
-        terms = [self.S()]
-        ops = []
+    def plus_minus(self):
+        result = self.nasobenie()
         while self.current_token.type in (TokenType.PLUS, TokenType.MINUS):
-            ops.append(self.current_token.type)
-            self.consume(self.current_token.type)
-            terms.append(self.S())
-        # Apply right-associative logic
-        while ops:
-            op = ops.pop()
-            right = terms.pop()
-            left = terms.pop()
-            result = left + right if op == TokenType.PLUS else left - right
-            terms.append(result)
-        return terms[0]
+            if self.current_token.type == TokenType.PLUS:
+                self.consume(TokenType.PLUS)
+                result += self.nasobenie()
+            else:
+                self.consume(TokenType.MINUS)
+                result -= self.nasobenie()
+        return result
 
-    # S → F ('*' F)* (left-associative)
-    def S(self):
-        result = self.F()
+    def nasobenie(self):
+        result = self.factor()
         while self.current_token.type == TokenType.TIMES:
             self.consume(TokenType.TIMES)
-            result *= self.F()
+            result *= self.factor()
         return result
 
-    # F → NUMBER | '(' E ')'
-    def F(self):
+
+    def factor(self):
         if self.current_token.type == TokenType.NUMBER:
             value = self.current_token.attribute
             self.consume(TokenType.NUMBER)
             return value
         elif self.current_token.type == TokenType.LPAREN:
             self.consume(TokenType.LPAREN)
-            result = self.E()
+            result = self.less()
             self.consume(TokenType.RPAREN)
             return result
         else:
-            raise SyntaxError(f"Syntax error: expected token type TokenType.NUMBER, but found token type {self.current_token.type}")
+            raise SyntaxError(f"Unexpected token{self.current_token}")
