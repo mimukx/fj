@@ -1,10 +1,23 @@
-def parse(self):
+from Lexer import TokenType
+
+class Parser:
+    def __init__(self, lexer):
+        self.lexer = lexer
+        self.current_token = self.lexer.get_next_token()
+
+    def consume(self, expected_token_type):
+        if self.current_token.type == expected_token_type:
+            self.current_token = self.lexer.get_next_token()
+        else:
+            raise SyntaxError(f"Syntax error: expected token type {expected_token_type}, but found token type {self.current_token.type}")
+
+    def parse(self):
         result = self.expr()
         if self.current_token.type != TokenType.EOF:
             raise SyntaxError("Unexpected input after complete expression")
         return result
 
-
+    # expr → power ('^' power)*
     def expr(self):
         result = self.power()
         while self.current_token.type == TokenType.POWER:
@@ -15,11 +28,11 @@ def parse(self):
             result = result * int(exponent)
         return result
 
-    
+    # power → reverse
     def power(self):
         return self.reverse()
 
-    
+    # reverse → '|' reverse | concat
     def reverse(self):
         if self.current_token.type == TokenType.REVERSE:
             self.consume(TokenType.REVERSE)
@@ -28,7 +41,7 @@ def parse(self):
         else:
             return self.concat()
 
-    
+    # concat → factor ('.' factor)*
     def concat(self):
         result = self.factor()
         while self.current_token.type == TokenType.CONCAT:
@@ -36,7 +49,7 @@ def parse(self):
             result += self.factor()
         return result
 
-    
+    # factor → STRING | NUMBER | '(' expr ')'
     def factor(self):
         if self.current_token.type == TokenType.STRING:
             value = self.current_token.attribute
