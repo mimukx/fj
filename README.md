@@ -1,4 +1,4 @@
-Praser_1: 
+Parser_1: 
 
 " ^ " s najnižšou prioritou 
 
@@ -8,6 +8,10 @@ Praser_1:
 
 "("a")"
 
-Praser_2:
+Parser_2:
 
-  
+"*" s najnižšou prioritou
+
+"+" a odčítania "-" s prioritou vyššou ako násobenie a pravou asociativitou
+
+"<" s najvyššou priotitou a ľavou asociativitou
