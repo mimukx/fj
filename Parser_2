@@ -1,5 +1,6 @@
 from Lexer import TokenType
 
+
 class Parser:
     def __init__(self, lexer):
         self.lexer = lexer
@@ -9,61 +10,51 @@ class Parser:
         if self.current_token.type == expected_token_type:
             self.current_token = self.lexer.get_next_token()
         else:
-            raise SyntaxError(f"Syntax error: expected token type {expected_token_type}, but found token type {self.current_token.type}")
+            raise SyntaxError(f"Syntax error: exprected token type {expected_token_type}, "
+                              f"but found token type {self.current_token.type}")
 
-    def parse(self):
-        result = self.expr()
+
+    def parser(self):
+        result = self.concat()
         if self.current_token.type != TokenType.EOF:
-            raise SyntaxError("Unexpected input after complete expression")
+            raise SyntaxError("fsfsfe")
         return result
 
-    
-    def expr(self):
-        result = self.power()
-        while self.current_token.type == TokenType.POWER:
-            self.consume(TokenType.POWER)
-            exponent = self.power()
-            if not exponent.isdigit():
-                raise ValueError("Right-hand side of '^' must be a number")
-            result = result * int(exponent)
-        return result
 
-    
-    def power(self):
-        return self.reverse()
-
-    
-    def reverse(self):
-        if self.current_token.type == TokenType.REVERSE:
-            self.consume(TokenType.REVERSE)
-            value = self.reverse()
-            return value[::-1]
-        else:
-            return self.concat()
-
-   
     def concat(self):
-        result = self.factor()
+        result = self.reverse()
         while self.current_token.type == TokenType.CONCAT:
             self.consume(TokenType.CONCAT)
-            result += self.factor()
+            result += self.reverse()
         return result
 
-    
-    def factor(self):
+    def reverse(self):
+        result = self.power()
+        if self.current_token.type == TokenType.INVERT:
+            self.consume(TokenType.INVERT)
+            result = result[::-1]
+        return result
+
+
+    def power(self):
+        result = self.last()
+        if self.current_token.type == TokenType.POWER:
+            self.consume(TokenType.POWER)
+            value = self.power()
+            if not value.isdigit():
+                raise ValueError("fwkgwoijgeijseg")
+            result *= int(value)
+        return result
+
+    def last(self):
         if self.current_token.type == TokenType.STRING:
             value = self.current_token.attribute
             self.consume(TokenType.STRING)
             return value
-        elif self.current_token.type == TokenType.NUMBER:
-            value = str(self.current_token.attribute)
-            self.consume(TokenType.NUMBER)
-            return value
         elif self.current_token.type == TokenType.LPAREN:
             self.consume(TokenType.LPAREN)
-            value = self.expr()
+            result = self.concat()
             self.consume(TokenType.RPAREN)
-            return value
+            return result
         else:
-            raise SyntaxError(f"Syntax error: expected STRING, NUMBER or '(', but found {self.current_token.type}")
-
+            raise SyntaxError('skfjjgkrvhsiiger')
