@@ -1,20 +1,23 @@
 from Lexer import TokenType
 
+
 class Parser:
     def __init__(self, lexer):
         self.lexer = lexer
         self.current_token = self.lexer.get_next_token()
-    
+
     def consume(self, expected_token_type):
         if self.current_token.type == expected_token_type:
             self.current_token = self.lexer.get_next_token()
         else:
-            raise SyntaxError(f"Syntax error: expected token type {expected_token_type}, but found token type {self.current_token.type}")
-    
-    def parse(self):
+            raise SyntaxError(f"Syntax error: exprected token type {expected_token_type}, "
+                              f"but found token type {self.current_token.type}")
+
+
+    def parser(self):
         result = self.less()
         if self.current_token.type != TokenType.EOF:
-            raise SyntaxError(f"Unexpected token: {self.current_token}")
+            raise SyntaxError("fsfsfe")
         return result
 
     def less(self):
@@ -36,14 +39,13 @@ class Parser:
         return result
 
     def nasobenie(self):
-        result = self.factor()
-        while self.current_token.type == TokenType.TIMES:
+        result = self.last()
+        if self.current_token.type == TokenType.TIMES:
             self.consume(TokenType.TIMES)
-            result *= self.factor()
+            result *= self.last()
         return result
 
-
-    def factor(self):
+    def last(self):
         if self.current_token.type == TokenType.NUMBER:
             value = self.current_token.attribute
             self.consume(TokenType.NUMBER)
@@ -54,4 +56,4 @@ class Parser:
             self.consume(TokenType.RPAREN)
             return result
         else:
-            raise SyntaxError(f"Unexpected token{self.current_token}")
+            raise SyntaxError('skfjjgkrvhsiiger')
