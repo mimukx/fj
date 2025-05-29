@@ -1,0 +1,172 @@
+from unittest import result
+
+from Lexer import TokenType
+
+
+class Parser:
+    def __init__(self, lexer):
+        self.lexer = lexer
+        self.current_token = self.lexer.get_next_token()
+
+    def consume(self, expected_token_type):
+        if self.current_token.type == expected_token_type:
+            self.current_token = self.lexer.get_next_token()
+        else:
+            raise SyntaxError(f"Syntaktická chyba: očakávaný token {expected_token_type}, "
+                              f"získaný {self.current_token.type}")
+
+    def parse(self):
+        value = self.plusMinusleft()
+        if self.current_token.type != TokenType.EOF:
+            raise SyntaxError(f"Syntaktick<UNK> chyba: {self.current_token.type}")
+        return value
+
+    def plusMinusright(self):
+        result = self.plusMinusleft()
+        if self.current_token.type in (TokenType.PLUS, TokenType.MINUS):
+            if self.current_token.type is TokenType.PLUS:
+                self.consume(TokenType.PLUS)
+                result = result + self.plusMinusright()
+            elif self.current_token.type is TokenType.MINUS:
+                self.consume(TokenType.MINUS)
+                result = result - self.plusMinusright()
+        return result
+
+    def plusMinusleft(self):
+        result = self.stepenleft()
+        while self.current_token.type in (TokenType.PLUS, TokenType.MINUS):
+            if self.current_token.type is TokenType.PLUS:
+                self.consume(TokenType.PLUS)
+                result = result + self.stepenleft()
+            elif self.current_token.type is TokenType.MINUS:
+                self.consume(TokenType.MINUS)
+                result = result - self.stepenleft()
+        return result
+
+    def stepenright(self):
+        result = self.stepenleft()
+        if self.current_token.type is TokenType.POWER:
+            self.consume(TokenType.POWER)
+            result = result ** self.stepenright()
+        return result
+
+    def stepenleft(self):
+        result = self.myltiright()
+        while self.current_token.type is TokenType.POWER:
+            self.consume(TokenType.POWER)
+            result = result ** self.myltiright()
+        return result
+
+    def myltileft(self):
+        result = self.myltiright()
+        while self.current_token.type is TokenType.MULTY:
+            self.consume(TokenType.MULTY)
+            result = result * self.myltiright()
+        return result
+
+    def myltiright(self):
+        result = self.concant()
+        if self.current_token.type is TokenType.MULTY:
+            self.consume(TokenType.MULTY)
+            result = result * self.myltiright()
+        return result
+
+    def concant(self):
+        result = self.unary()
+        while self.current_token.type is TokenType.CONCAT:
+            self.consume(TokenType.CONCAT)
+            result = int(str(result)+str(self.unary()))
+        return result
+
+    def unary(self):
+        if self.current_token.type is TokenType.MINUS:
+            self.consume(TokenType.MINUS)
+            return -1*self.unary()
+        else:
+            return self.mod()
+
+    def factorial(self):
+        if self.current_token.type is TokenType.FACTORIAL:
+            self.consume(TokenType.FACTORIAL)
+            result = 1
+            for i in range(1, self.factorial() + 1):
+                result = result * i
+            return result
+        else:
+            return self.end()
+
+    def mod(self):
+        if self.current_token.type is TokenType.ABSOLUTE:
+            self.consume(TokenType.ABSOLUTE)
+            result = self.end()
+            if result < 0:
+                return -result
+            return result
+        return self.end()
+
+    def compare(self):
+        result = self.end()
+        while self.current_token.type is TokenType.LESS:
+            self.consume(TokenType.LESS)
+            right = self.end()
+            if result < right:
+                result = 1
+            else:
+                result = 0
+        return result
+
+    def concat(self):
+        result = self.power()
+        while self.current_token.type == TokenType.CONCAT:
+            self.consume(TokenType.CONCAT)
+            right = self.power()
+            result += right
+        return result
+
+    def power(self):
+        result = self.reverse()
+        if self.current_token.type == TokenType.POWER:
+            self.consume(TokenType.POWER)
+            if self.current_token.type != TokenType.NUMBER:
+                raise SyntaxError(f"Syntax error: expected NUMBER, but found {self.current_token.type}")
+            exponent = self.current_token.attribute
+            self.consume(TokenType.NUMBER)
+            result *= exponent
+        return result
+
+    def reverse(self):
+        if self.current_token.type == TokenType.REVERS:
+            self.consume(TokenType.REVERS)
+            return self.reverse()[::-1]
+        else:
+            return self.atom()
+
+    def atom(self):
+        token = self.current_token
+        if token.type == TokenType.STRING:
+            self.consume(TokenType.STRING)
+            return token.attribute
+        elif token.type == TokenType.NUMBER:
+            self.consume(TokenType.NUMBER)
+            return str(token.attribute)
+        elif token.type == TokenType.LPAREN:
+            self.consume(TokenType.LPAREN)
+            result = self.concat() 
+            self.consume(TokenType.RPAREN)
+            return result
+        else:
+            raise SyntaxError(
+                f"Syntax error: expected STRING, NUMBER or LPAREN, but found {token.type}"
+            )
+
+    def end(self):
+        if self.current_token.type is TokenType.NUMBER:
+            num = self.current_token.attribute
+            self.consume(TokenType.NUMBER)
+            return num
+        elif self.current_token.type is TokenType.LPAREN:
+            self.consume(TokenType.LPAREN)
+            result = self.plusMinusleft()
+            self.consume(TokenType.RPAREN)
+            return result
+        raise SyntaxError(f"chyba: {self.current_token.type}")
